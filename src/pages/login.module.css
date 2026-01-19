@@ -1,0 +1,143 @@
+/* styles/Login.module.css */
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: white;
+  padding: 0px 10px; /* small padding for mobile */
+  gap: 0px 6rem;
+}
+.isyncLogin{
+  width: 80%;
+  height: 100vh;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  background: url("../assets/Backdrop.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem 0rem;
+  
+
+}
+
+.cloudlogoBox
+{
+  width: 10rem;
+}
+
+.threeImagesBox
+{
+  width: 50%;
+}
+
+.IsyncLiBox
+{
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ gap: 0px 1.5rem;
+ border-bottom: 1px solid grey;
+ padding-bottom: 1rem;
+}
+
+
+
+.loginBox {
+  background-color: #fff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px; /* responsive max width */
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  height: 70vh;
+}
+
+.title {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 25px;
+  font-weight: 600;
+  color: #2f3640;
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.inputGroup label {
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2f3640;
+}
+
+.inputGroup input {
+  padding: 12px 10px;
+  border-radius: 8px;
+  border: 1px solid #dcdde1;
+  font-size: 16px;
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: #55BBE2;
+}
+
+.error {
+  color: #e84118;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #55BBE2;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.button:hover {
+  background-color: #74b9ff;
+}
+
+.footer {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #636e72;
+}
+
+/* Responsive for small screens */
+@media (max-width: 480px) {
+  .loginBox {
+    padding: 30px 20px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .inputGroup input {
+    font-size: 14px;
+    padding: 10px 8px;
+  }
+
+  .button {
+    font-size: 16px;
+    padding: 10px;
+  }
+}
