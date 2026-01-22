@@ -34,7 +34,7 @@ const Backups = () => {
 
       setLoading(true)
       // setBackups([])
-     
+
       if (role == userRoles.level2) {
         const data = await backupsAPI.list()
         setBackups(data)
@@ -63,7 +63,7 @@ const Backups = () => {
 
     loadBackups()
     let timer = setInterval(() => {
-      
+
       loadBackups()
     }, 15000)
 
@@ -110,7 +110,17 @@ const Backups = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Backup Management</h1>
+      
+      <div className={styles.buttonBar}>
+        <h1>Backup Management</h1>
+
+        <button
+          onClick={() => navigate("/")}
+          className={styles.backButton}
+        >
+          ← Back to Home
+        </button>
+      </div>
 
       <table className={styles.table}>
         <thead>
@@ -145,26 +155,34 @@ const Backups = () => {
                 </td>
                 <td>
                   <button
+                    type="button"   // ✅ ADD THIS
                     className={styles.backupButton}
-                    onClick={() => triggerBackup(backup.hostname, 'full')}
+                    onClick={() => {
+                      console.log("Button clicked");
+                      if (window.confirm("The Backup will start immediately. Please confirm.")) {
+                        triggerBackup(backup.hostname, 'full');
+                      }
+                    }}
                     disabled={triggering[`${backup.hostname}_full`]}
                   >
-                    {triggering[`${backup.hostname}_full`]
-                      ? 'Starting...'
-                      : 'Full Backup'}
+                    {triggering[`${backup.hostname}_full`] ? 'Starting...' : 'Full Backup'}
                   </button>
+
                   <button
+                    type="button"   // ✅ ADD THIS
                     className={styles.backupButton}
-                    onClick={() =>
-                      triggerBackup(backup.hostname, 'incremental')
-                    }
+                    onClick={() => {
+                      console.log("Button clicked");
+                      if (window.confirm("The Backup will start immediately. Please confirm.")) {
+                        triggerBackup(backup.hostname, 'incremental');
+                      }
+                    }}
                     disabled={triggering[`${backup.hostname}_incremental`]}
                   >
-                    {triggering[`${backup.hostname}_incremental`]
-                      ? 'Starting...'
-                      : 'Incremental Backup'}
+                    {triggering[`${backup.hostname}_incremental`] ? 'Starting...' : 'Incremental Backup'}
                   </button>
                 </td>
+
               </tr>
             ))
           )}

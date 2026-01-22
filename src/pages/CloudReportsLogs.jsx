@@ -1,7 +1,8 @@
 import styles from './Reports.module.css'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchLog } from '../services/api'
+import { fetchLog, deleteRcloneLog } from '../services/api'
+import jsPDF from "jspdf";
 
 const card = {
   padding: '14px 16px',
@@ -46,6 +47,8 @@ const statusColor = (status) => {
   return '#374151'
 }
 
+
+
 const CloudReportsLogs = () => {
   const [logContent, setLogContent] = useState({ content: "" });
 
@@ -59,12 +62,145 @@ const CloudReportsLogs = () => {
         console.error("Error fetching log:", err);
       });
   }, []);
-  
+
+  const handleDownloadLogs = () => {
+    if (!logContent?.content) {
+      alert("No logs available to download");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    // Date & Time: DD-MM-YYYY HH:mm:ss
+    const now = new Date();
+    const printDateTime = now
+      .toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+      .replace(/\//g, "-")
+      .replace(",", "");
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 10;
+    const headerHeight = 15;
+    const lineHeight = 6;
+
+    // Helper: draw header on each page
+    const drawHeader = () => {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Cloud-Reports & Logs", margin, 10);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Printed On: ${printDateTime}`, pageWidth - margin, 10, {
+        align: "right",
+      });
+    };
+
+    drawHeader();
+
+    // Split text
+    const textLines = doc.splitTextToSize(
+      logContent.content,
+      pageWidth - margin * 2
+    );
+
+    let y = headerHeight;
+
+    textLines.forEach((line) => {
+      if (y + lineHeight > pageHeight - margin) {
+        doc.addPage();
+        drawHeader();
+        y = headerHeight;
+      }
+
+      doc.text(line, margin, y);
+      y += lineHeight;
+    });
+
+    // Save PDF
+    doc.save(`Cloud-Reports & Logs-${printDateTime.replace(/:/g, "-")}.pdf`);
+  };
+
+
+  const handleDeleteLog = async () => {
+    try {
+      const res = await deleteRcloneLog();
+      alert(res.message);
+      fetchLog()
+        .then((data) => {
+          // bind fetched text into state
+          setLogContent({ content: data });
+        })
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div>
-      <h1>Cloud Reports & Logs</h1>
+      {/* <h1>Cloud Reports & Logs</h1> */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1>Cloud Reports & Logs</h1>
 
-      <section style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={handleDownloadLogs}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #0284c7",
+              background: "#e0f2fe", // sky blue
+              color: "#0369a1",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Download Logs
+          </button>
+
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Are you sure you want to permanently clear reports & logs?"
+                )
+              ) {
+                handleDeleteLog();
+              }
+            }}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #dc2626",
+              background: "#fee2e2",
+              color: "#b91c1c",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Clear Logs
+          </button>
+        </div>
+      </div>
+
+
+      {/* <section style={{ marginTop: 14 }}>
         <h2>Filters</h2>
         <div style={card}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -91,11 +227,11 @@ const CloudReportsLogs = () => {
               Apply
             </button>
           </div>
-          {/* <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+          <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
             Filters are UI-only; hook to backend logs later.
-          </div> */}
+          </div>
         </div>
-      </section>
+      </section> */}
 
       <section style={{ marginTop: 16 }}>
         <textarea
@@ -147,6 +283,8 @@ const CloudReportsLogs = () => {
           </div>
         </div> */}
       </section>
+
+
 
       {/* <section style={{ marginTop: 16 }}>
         <h2>Errors & Alerts</h2>
@@ -201,7 +339,9 @@ const CloudReportsLogs = () => {
       </section> */}
     </div>
   )
+
 }
+
 
 export default CloudReportsLogs
 

@@ -1,14 +1,19 @@
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* 🚫 stop page scroll */
+}
+
 .appShell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-rows: 56px 1fr;
   grid-template-columns: 260px 1fr;
   grid-template-areas:
     "topbar topbar"
     "sidebar main";
-  background: #f4f6fb;
-  color: #111827;
 }
+
 
 .topbar {
   grid-area: topbar;
@@ -87,7 +92,7 @@
   cursor: pointer;
 }
 
-.sidebar {
+/* .sidebar {
   grid-area: sidebar;
   border-right: 1px solid rgba(148, 163, 184, 0.25);
   background: #ffffff;
@@ -95,9 +100,26 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+} */
+
+.sidebar {
+  grid-area: sidebar;
+  border-right: 1px solid rgba(148, 163, 184, 0.25);
+  background: #ffffff;
+  padding: 18px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  overflow-y: auto;   /* ✅ sidebar scroll */
+  overflow-x: hidden;
 }
 
+
+
 .sidebarSectionTitle {
+  margin-top: 5px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -155,9 +177,10 @@
 .main {
   grid-area: main;
   padding: 20px 32px;
-  overflow-y: auto;
+  overflow-y: auto;   /* ✅ page content scroll */
   background: #f4f6fb;
 }
+
 
 .mainInner {
   max-width: 1120px;
@@ -181,15 +204,11 @@
   }
 
   .sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 10px 14px;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    overflow-y: hidden;
   }
 
   .sidebarNav {
-    flex-direction: row;
-    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
   .sidebarLink {
@@ -197,3 +216,26 @@
   }
 }
 
+.cloudHeader {
+  cursor: pointer;
+  padding: 10px 12px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cloudHeader:hover {
+  background-color: #87ceeb; /* SkyBlue */
+  color: #ffffff;
+}
+.iconBtn {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.iconBtn:hover {
+  background: #e5e7eb;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}

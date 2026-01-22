@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { reportsAPI } from '../services/api'
 import styles from './Reports.module.css'
-
+import jsPDF from "jspdf";
 const Reports = () => {
   const navigate = useNavigate()
   const [logType, setLogType] = useState('backup')
@@ -36,6 +36,74 @@ const Reports = () => {
     }
   }, [logType])
 
+  const handleDownloadLogs = () => {
+    if (!logContent?.content) {
+      alert("No logs available to download");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    // Date & Time: DD-MM-YYYY HH:mm:ss
+    const now = new Date();
+    const printDateTime = now
+      .toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+      .replace(/\//g, "-")
+      .replace(",", "");
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 10;
+    const headerHeight = 15;
+    const lineHeight = 6;
+
+    // Helper: draw header on each page
+    const drawHeader = () => {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Reports & Logs", margin, 10);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Printed On: ${printDateTime}`, pageWidth - margin, 10, {
+        align: "right",
+      });
+    };
+
+    drawHeader();
+
+    // Split text
+    const textLines = doc.splitTextToSize(
+      logContent.content,
+      pageWidth - margin * 2
+    );
+
+    let y = headerHeight;
+
+    textLines.forEach((line) => {
+      if (y + lineHeight > pageHeight - margin) {
+        doc.addPage();
+        drawHeader();
+        y = headerHeight;
+      }
+
+      doc.text(line, margin, y);
+      y += lineHeight;
+    });
+
+    // Save PDF
+    doc.save(`Reports_Logs-${printDateTime.replace(/:/g, "-")}.pdf`);
+  };
+
 
   // const loadLogDates = async () => {
   //   try {
@@ -56,7 +124,7 @@ const Reports = () => {
   // }
 
   const loadLog = async () => {
-    
+
     try {
       setLoading(true)
       const tomorrow = new Date(Date.now() + 86400000)
@@ -65,7 +133,7 @@ const Reports = () => {
         .replace(/-/g, "-");
 
       const content = await reportsAPI.getLog(logType, tomorrow)
-    //  console.log("logcontent", logContent)
+      //  console.log("logcontent", logContent)
       setLogContent(content)
     } catch (error) {
       console.error('Error loading log:', error)
@@ -78,8 +146,50 @@ const Reports = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Reports & Logs</h1>
+      {/* <h1>Reports & Logs</h1> */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Reports & Logs</h1>
 
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={handleDownloadLogs}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #0284c7",
+              background: "#e0f2fe", // sky blue
+              color: "#0369a1",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Download Logs
+          </button>
+
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Are you sure you want to permanently clear reports & logs?"
+                )
+              ) {
+                handleDeleteLog();
+              }
+            }}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #dc2626",
+              background: "#fee2e2",
+              color: "#b91c1c",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Clear Logs
+          </button>
+        </div>
+      </div>
       <div className={styles.selectGroup}>
         <label htmlFor="logSelect">Select Log Type:</label>
         <select
@@ -93,8 +203,8 @@ const Reports = () => {
         >
           <option value="backup">Backup Logs</option>
 
-         {/* <option value="restore">Restore Logs</option>
-          <option value="system">System Logs</option> */} 
+          {/* <option value="restore">Restore Logs</option>
+          <option value="system">System Logs</option> */}
 
         </select>
       </div>

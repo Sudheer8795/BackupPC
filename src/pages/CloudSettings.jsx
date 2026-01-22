@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { getProviders, saveProvider, updateProvider, getSchedularDetails, saveSchedule, getTransferPolicies, saveTransferPolicies } from '../services/api';
+import { getProviders, saveProvider, updateProvider, getSchedularDetails, saveSchedule, getTransferPolicies, saveTransferPolicies, deleteProvider } from '../services/api';
+import layoutStyles from "../components/Layout.module.css";
+
 
 const card = {
   padding: '14px 16px',
@@ -30,6 +32,15 @@ const inputStyle = {
   outline: 'none',
   boxSizing: 'border-box'
 };
+const iconBtnStyle = {
+  padding: "4px",
+  borderRadius: 6,
+  border: "1px solid #d1d5db",
+  background: "#f9fafb",
+  cursor: "pointer",
+};
+
+
 
 const label = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, color: '#374151' }
 const input = { padding: '8px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14 }
@@ -61,11 +72,11 @@ const CloudSettings = () => {
   const [schedule, setSchedule] = useState([]);
 
   const [form, setForm] = useState({
-    provider: "",
-    bucketName: "",
+    providerType: "",
+    instanceName: "",
     region: "",
     accessKey: "",
-    secretKey: "",
+    secretKey: ""
   });
   const [data, setData] = useState({
     mode: "After every backup",
@@ -77,6 +88,7 @@ const CloudSettings = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [editingProvider, setEditingProvider] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadProviders();
@@ -167,29 +179,67 @@ const CloudSettings = () => {
     s3_compatible: "S3_COMPAT",
   };
 
-  const handleEdit = (p) => {
+  function handleEdit(p) {
+    let providerValue = '';
+    switch (p.provider.toLowerCase()) {
+      case 'aws s3':
+      case 's3':
+        providerValue = 's3';
+        break;
+      case 'azure blob':
+      case 'azureblob':
+        providerValue = 'azureblob';
+        break;
+      case 'gdrive':
+      case 'drive':
+      case 'google drive':
+        providerValue = 'drive';
+        break;
+      default:
+        providerValue = '';
+    }
     setForm({
-      provider: PROVIDER_TYPE_MAP[p.type?.toLowerCase()] || "",
-      bucketName: p.bucket || "",
+      provider: providerValue,
+      instanceName: p.name,
       region: p.region || "",
       accessKey: "",
-      secretKey: "",
+      secretKey: ""
     });
-
     setEditingProvider(p.name);
     setIsEdit(true);
-  };
+  }
+
+  useEffect(() => {
+    loadProviders();
+  }, []);
+
+  function resetForm() {
+    setForm({
+      provider: "",
+      instanceName: "",
+      region: "",
+      accessKey: "",
+      secretKey: ""
+    });
+    setIsEdit(false);
+    setEditingProvider(null);
+  }
 
   async function loadProviders() {
     try {
+      setLoading(true);
       const data = await getProviders();
       setProvidersList(data);
     } catch (err) {
       console.error(err);
     }
+    finally {
+      setLoading(false);             // stop loader
+    }
+
   }
   const handleClear = async () => {
-    await loadProviders(); // reload table data
+    // await loadProviders(); // reload table data
 
     setForm({
       provider: "Select Provider",
@@ -205,42 +255,36 @@ const CloudSettings = () => {
 
   async function handleSave() {
     try {
-      await saveProvider({
-        provider: form.provider,
-        bucketName: form.bucketName,
-        region: form.region,
-        accessKey: form.accessKey,
-        secretKey: form.secretKey,
-      });
-
-      setForm({
-        provider: "Select Provider",
-        bucketName: "",
-        region: "",
-        accessKey: "",
-        secretKey: "",
-      });
-      alert('Cloud saved successfully!');
+      await saveProvider(form);
+      alert("Provider saved successfully");
+      resetForm();
       loadProviders();
-    } catch (err) {
-      alert(err.message);
+    } catch (e) {
+      alert(e.message);
     }
   }
 
-  const handleUpdate = async () => {
+  async function handleUpdate() {
     try {
       await updateProvider(editingProvider, form);
-      alert("Provider update successfully");
+      alert("Provider updated successfully");
       setIsEdit(false);
-      setEditingProvider(null);
+      resetForm();
       loadProviders();
-
-    } catch (err) {
-      alert(err.message);
-      console.log(err.message);
+    } catch (e) {
+      alert(e.message);
     }
-  };
+  }
 
+  async function handleDelete(p) {
+    try {
+      await deleteProvider(p);
+      alert("Provider deleted");
+      loadProviders();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
   return (
     <div>
       <h1>Cloud Settings</h1>
@@ -272,62 +316,87 @@ const CloudSettings = () => {
           >
             <thead>
               <tr>
-                <th style={th}>Name</th>
-                <th style={th}>Type</th>
-                <th style={th}>Bucket / Container</th>
+                <th style={th}>Provider</th>
+                <th style={th}>Instance Name</th>
                 <th style={th}>Region / Endpoint</th>
                 <th style={th}>Status</th>
                 <th style={th}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {providersList.map((p) => (
-                <tr
-                  key={p.name}
-                  style={{
-                    backgroundColor:
-                      editingProvider === p.name ? "#dbeafe" : "transparent", // light blue
-                    boxShadow:
-                      editingProvider === p.name
-                        ? "0 0 0 1px #60a5fa inset"
-                        : "none",
-                    transition: "0.2s",
-                  }}
-                >
-                  <td style={td}>{p.name}</td>
-                  <td style={td}>{p.type}</td>
-                  <td style={td}>{p.bucket}</td>
-                  <td style={td}>{p.region}</td>
-                  <td
-                    style={{
-                      ...td,
-                      color: p.status === "Healthy" ? "#16a34a" : "#6b7280",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {p.status}
-                  </td>
-                  <td style={td}>
-                    <button
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        border: "1px solid #d1d5db",
-                        cursor: "pointer",
-                        background:
-                          editingProvider === p.name ? "#93c5fd" : "#fef3c7",
-                      }}
-                      onClick={() => handleEdit(p)}
-                    >
-                      Edit
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: 16 }}>
+                    Loading Provider Details…
                   </td>
                 </tr>
-              ))}
+              ) : providersList.length > 0 ? (
+                providersList.map((p) => (
+                  <tr
+                    key={p.name}
+                    style={{
+                      backgroundColor:
+                        editingProvider === p.name ? "#dbeafe" : "transparent",
+                      boxShadow:
+                        editingProvider === p.name
+                          ? "0 0 0 1px #60a5fa inset"
+                          : "none",
+                      transition: "0.2s",
+                    }}
+                  >
+                    <td style={td}>{p.provider}</td>
+                    <td style={td}>{p.name}</td>
+                    <td style={td}>{p.region}</td>
 
-              {providersList.length === 0 && (
+                    <td
+                      style={{
+                        ...td,
+                        color: p.status === "Healthy" ? "#16a34a" : "#dc2626",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {p.status}
+                    </td>
+
+                    <td style={td}>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {/* Edit */}
+                        <button
+                          onClick={() => handleEdit(p)}
+                          className={layoutStyles.iconBtn}
+                          title="Edit"
+                        >
+                          <img src="/assets/edit.ico" alt="Edit" width={16} height={16} />
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Delete provider instance "${p.name}"?`
+                              )
+                            ) {
+                              handleDelete(p.name);
+                            }
+                          }}
+                          className={layoutStyles.iconBtn}
+                          title="Delete"
+                        >
+                          <img
+                            src="/assets/delete.ico"
+                            alt="Delete"
+                            width={16}
+                            height={16}
+                          />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan={5} style={{ ...td, textAlign: "center" }}>
+                  <td colSpan={5} style={{ textAlign: "center", padding: 16 }}>
                     No providers configured
                   </td>
                 </tr>
@@ -353,26 +422,39 @@ const CloudSettings = () => {
                 }
               >
                 <option value="">Select Provider</option>
-                <option value="AWS_S3">AWS S3</option>
-                <option value="AZURE_BLOB">Azure Blob</option>
-                <option value="GCS">GCS</option>
-                <option value="GDRIVE">GDrive</option>
-                <option value="S3_COMPAT">S3-compatible</option>
-
+                <option value="s3">AWS S3</option>
+                <option value="azureblob">Azure Blob</option>
+                <option value="drive">Google Drive</option>
               </select>
             </label>
-
+            {/* 
             <label style={label}>
-              Bucket / Container
+              Instance Name
               <input
                 style={input}
-                value={form.bucketName}
+                value={form.instanceName}
                 onChange={(e) =>
-                  setForm({ ...form, bucketName: e.target.value })
+                  setForm({ ...form, instanceName: e.target.value })
                 }
-                placeholder=""
+              />
+            </label> */}
+
+            <label style={label}>
+              Instance Name
+              <input
+                style={{
+                  ...input,
+                  backgroundColor: isEdit ? "#f3f4f6" : "white",
+                  cursor: isEdit ? "not-allowed" : "text",
+                }}
+                value={form.instanceName}
+                readOnly={isEdit}
+                onChange={(e) =>
+                  setForm({ ...form, instanceName: e.target.value })
+                }
               />
             </label>
+
 
             <label style={label}>
               Region / Endpoint
@@ -382,7 +464,6 @@ const CloudSettings = () => {
                 onChange={(e) =>
                   setForm({ ...form, region: e.target.value })
                 }
-                placeholder=""
               />
             </label>
 
@@ -394,36 +475,39 @@ const CloudSettings = () => {
                 onChange={(e) =>
                   setForm({ ...form, accessKey: e.target.value })
                 }
-                placeholder=""
               />
             </label>
 
-            <label style={label}>
-              Secret Key
-              <input
-                type="password"
-                style={input}
-                value={form.secretKey}
-                onChange={(e) =>
-                  setForm({ ...form, secretKey: e.target.value })
-                }
-                placeholder="••••••••"
-              />
-            </label>
-            <button
-              style={{
-                // padding: "9px 12px",
-                width: "5rem",
-                height: "2rem",
-                borderRadius: 8,
-                border: "1px solid #d1d5db",
-                background: "#e5edff",
-                cursor: "pointer",
-              }}
-              onClick={handleClear}
-            >
-              Clear
-            </button>
+            {/* Secret + Clear */}
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <label style={{ ...label, flex: 1 }}>
+                Secret Key
+                <input
+                  type="password"
+                  style={input}
+                  value={form.secretKey}
+                  onChange={(e) =>
+                    setForm({ ...form, secretKey: e.target.value })
+                  }
+                  placeholder="••••••••"
+                />
+              </label>
+
+              <button
+                style={{
+                  height: "2.2rem",
+                  padding: "0 14px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#e5edff",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+                onClick={resetForm}
+              >
+                Clear
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: 10 }}>
@@ -439,7 +523,6 @@ const CloudSettings = () => {
             >
               {isEdit ? "Update Provider" : "+ Add Provider"}
             </button>
-
           </div>
         </div>
       </section>
@@ -659,7 +742,7 @@ const CloudSettings = () => {
       {/* </div>
       </section> */}
 
-      <section style={{ marginTop: 18 }}>
+      <section style={{ marginTop: 18, display: 'none' }}>
         <h2>Per-Host Overrides</h2>
         <div style={card}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>

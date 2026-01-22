@@ -3,16 +3,18 @@
 //const BASE_URL = 'http://192.168.1.37:8081';
 
 const BASE_URL = "https://both-rainbow-question-toronto.trycloudflare.com";
-const BASE_URL_CLOUD = "https://examined-themes-strike-get.trycloudflare.com"//"http://127.0.0.1:8082";
+const BASE_URL_CLOUD = "https://reflects-notifications-erik-visitors.trycloudflare.com"//"http://127.0.0.1:8082";
 const BASE_URL_LOG = "https://reflected-represent-dosage-rabbit.trycloudflare.com"//"http://127.0.0.1:8085";
 const BASE_URL_READLOG = "https://income-touched-directory-partners.trycloudflare.com"//"http://127.0.0.1:3000";
 const BASE_URL_PERMISSION = "https://fingers-producing-unix-representations.trycloudflare.com"//"http://127.0.0.1:8084";
 const BASE_URL_SETTING = "https://virtue-vault-asking-schools.trycloudflare.com"//"http://127.0.0.1:8088";
 const BASE_URL_SCHEDULE = "https://supervisors-rarely-cells-agrees.trycloudflare.com" //"http://127.0.0.1:8090";
-const BASE_URL_UPDATE = "https://ensure-keyboard-reviewed-varieties.trycloudflare.com/api/providers"//"http://127.0.0.1:5001/api/providers";
+// const BASE_URL_UPDATE = "https://ensure-keyboard-reviewed-varieties.trycloudflare.com/api/providers"//"http://127.0.0.1:5001/api/providers";
 const BASE_URL_GET_SCHEDULE = "https://cope-shelter-preferences-confidence.trycloudflare.com/"//"http://127.0.0.1:5002/";
 const BASE_URL_TRANSFER = "https://announce-cookbook-ross-praise.trycloudflare.com"//"http://127.0.0.1:8092";
 const API_BASE = "https://spears-monitor-totals-beginning.trycloudflare.com"//"http://127.0.0.1:8093"; 
+const API_LOG_DELETE_URL = "https://floppy-celebration-lamb-trusted.trycloudflare.com"//"http://127.0.0.1:8095";
+const API_CLOUD_OVERVIEW = "https://assumption-ruling-closely-imagination.trycloudflare.com"//"http://127.0.0.1:8096";
 
 // Utility delay function
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
@@ -470,19 +472,28 @@ export async function getProviders() {
   return res.json();
 }
 
-export async function saveProvider(payload) {
+export async function saveProvider(form) {
+  const payload = {
+    providerType: form.providerType || form.provider, 
+    instanceName: form.instanceName,
+    region: form.region,
+    accessKey: form.accessKey,
+    secretKey: form.secretKey,
+  };
+
   const res = await fetch(`${BASE_URL_SETTING}/save-cloud-settings`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams(payload).toString(),
+     headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Save failed");
   return data;
 }
+
 
 export const saveSchedule = async (input) => {
   const list = Array.isArray(input)
@@ -509,17 +520,34 @@ export const saveSchedule = async (input) => {
 
 
 export const updateProvider = async (providerName, form) => {
-  const res = await fetch(`${BASE_URL_UPDATE}/${providerName}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(form),
-  });
+  const res = await fetch(
+    `${BASE_URL_SETTING}/update-cloud-settings/${providerName}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    }
+  );
+
+  return res.json();
+};
+
+export const deleteProvider = async (providerName) => {
+  const res = await fetch(
+    `${BASE_URL_SETTING}/delete-cloud-settings/${providerName}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(err || "Failed to update provider");
+    throw new Error(err);
   }
 
   return res.json();
@@ -582,4 +610,49 @@ export async function getCloudTransfers() {
   }
 
   return res.json();
+}
+
+/**
+ * Permanently delete rclone log file
+ */
+export const deleteRcloneLog = async () => {
+  try {
+    const response = await fetch(`${API_LOG_DELETE_URL}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to delete log file");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Delete log error:", error);
+    throw error;
+  }
+};
+
+export async function getCloudOverview() {
+  try {
+    const res = await fetch(`${API_CLOUD_OVERVIEW}/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`API failed: ${res.status}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Cloud overview API error:", err);
+    return null;
+  }
 }

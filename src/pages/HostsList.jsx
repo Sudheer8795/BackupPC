@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { hostsAPI } from '../services/api'
 import { useApp } from '../context/AppContext'
 import styles from './HostsList.module.css'
+import layoutStyles from "../components/Layout.module.css";
 
 
 const HostsList = () => {
@@ -10,7 +11,7 @@ const HostsList = () => {
   const { hosts, loading, refreshHosts } = useApp()
   const [localHosts, setLocalHosts] = useState([])
 
- 
+
 
   // useEffect(() => {
   //   if (hosts.length > 0) {
@@ -20,14 +21,14 @@ const HostsList = () => {
   //   }
   // }, [hosts])
 
-  useEffect(()=>{
+  useEffect(() => {
     loadHosts()
-  },[])
+  }, [])
 
   const loadHosts = async () => {
     try {
-       const data = await hostsAPI.list()
-         setLocalHosts(data)
+      const data = await hostsAPI.list()
+      setLocalHosts(data)
     } catch (error) {
       console.error('Error loading hosts:', error)
       alert('Failed to load hosts')
@@ -57,12 +58,21 @@ const HostsList = () => {
   return (
     <div className={styles.container}>
       <h1>Hosts List</h1>
-      <button
-        className={styles.addButton}
-        onClick={() => navigate('/hosts/createHost')}
-      >
-        + Add New Host
-      </button>
+      <div className={styles.buttonBar}>
+        <button
+          className={styles.addButton}
+          onClick={() => navigate("/hosts/createHost")}
+        >
+          + Add New Host
+        </button>
+
+        <button
+          onClick={() => navigate("/")}
+          className={styles.backButton}
+        >
+          ← Back to Home
+        </button>
+      </div>
 
       {loading ? (
         <div>Loading...</div>
@@ -90,19 +100,41 @@ const HostsList = () => {
                   <td>{host.dhcpFlag == "1" ? 'Yes' : 'No'}</td>
                   <td>{host.user || '-'}</td>
                   <td>
-                    <button
-                      className={styles.editButton}
-                      onClick={() => handleEdit(host.hostname)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={() => handleDelete(host.hostname)}
-                    >
-                      Delete
-                    </button>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {/* Edit */}
+                      <button
+                        className={layoutStyles.iconBtn}
+                        onClick={() => handleEdit(host.hostname)}
+                        title="Edit"
+                      >
+                        <img
+                          src="/assets/edit.ico"
+                          alt="Edit"
+                          width={16}
+                          height={16}
+                        />
+                      </button>
+
+                      {/* Delete */}
+                      <button
+                        className={layoutStyles.iconBtn}
+                        onClick={() => {
+                          {
+                            handleDelete(host.hostname);
+                          }
+                        }}
+                        title="Delete"
+                      >
+                        <img
+                          src="/assets/delete.ico"
+                          alt="Delete"
+                          width={16}
+                          height={16}
+                        />
+                      </button>
+                    </div>
                   </td>
+
                 </tr>
               ))
             )}
